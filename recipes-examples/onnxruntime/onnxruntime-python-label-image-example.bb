@@ -31,9 +31,9 @@ do_install:append() {
     install -d ${D}${datadir}/onnxruntime/examples/python/test_data
     install -m 644 ${S}/python/classification/label_image.py ${D}${datadir}/onnxruntime/examples/python/
 
-    install -m 644 ${UNPACKDIR}/kitten.jpg ${D}${datadir}/onnxruntime/examples/python/test_data/
-    install -m 644 ${UNPACKDIR}/synset.txt ${D}${datadir}/onnxruntime/examples/python/test_data/
-    install -m 644 ${UNPACKDIR}/mobilenetv2-10.onnx ${D}${datadir}/onnxruntime/examples/python/test_data/
+    install -m 644 ${WORKDIR}/kitten.jpg ${D}${datadir}/onnxruntime/examples/python/test_data/
+    install -m 644 ${WORKDIR}/synset.txt ${D}${datadir}/onnxruntime/examples/python/test_data/
+    install -m 644 ${WORKDIR}/mobilenetv2-10.onnx ${D}${datadir}/onnxruntime/examples/python/test_data/
 }
 
 FILES:${PN} += "${datadir}/onnxruntime/examples/*"

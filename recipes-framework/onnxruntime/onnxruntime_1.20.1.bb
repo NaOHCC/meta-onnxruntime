@@ -11,7 +11,7 @@ DPV = "${@'.'.join(d.getVar('PV').split('.')[0:3])}"
 SRCREV = "5c1b7ccbff7e5141c1da7a9d963d660e5741c319"
 
 SRC_URI = " \
-    git://github.com/microsoft/onnxruntime.git;branch=rel-1.20.1;protocol=https \
+    git://gh.llkk.cc/https://github.com/microsoft/onnxruntime.git;branch=rel-1.20.1;protocol=https \
     file://0001-modify_platform_cpp.patch \
     file://0001-remove-onnxruntime_test.patch \
     file://0001-arm64-force-mcpu-to-be-valid.patch \
@@ -25,6 +25,8 @@ DEPENDS += "\
             python3 \
             python3-numpy \
             python3-pybind11 \
+            libatomic-ops \
+            ninja \
 "
 
 RDEPENDS:${PN} += " \
@@ -32,7 +34,7 @@ RDEPENDS:${PN} += " \
     python3-numpy \
 "
 
-inherit cmake python3-dir
+inherit python3-dir
 
 OECMAKE_SOURCEPATH = "${S}/cmake"
 
@@ -40,11 +42,19 @@ ONNXRUNTIME_BUILD_DIR = "${WORKDIR}/build/"
 
 PYBIND11_INCLUDE = "${PKG_CONFIG_SYSROOT_DIR}/${PYTHON_SITEPACKAGES_DIR}/pybind11/pybind11/include"
 NUMPY_INCLUDE = "${PKG_CONFIG_SYSROOT_DIR}/${PYTHON_SITEPACKAGES_DIR}/numpy/core/include"
+TARGET_CFLAGS += "-Wno-unused-variable -latomic"
+OECMAKE_C_FLAGS += "-I${PYTHON_INCLUDE_DIR} -I${PYBIND11_INCLUDE} -I${NUMPY_INCLUDE} -latomic"
+OECMAKE_C_FLAGS_RELEASE += "-I${PYTHON_INCLUDE_DIR} -I${PYBIND11_INCLUDE} -I${NUMPY_INCLUDE} -latomic"
+OECMAKE_CXX_FLAGS += "-I${PYTHON_INCLUDE_DIR} -I${PYBIND11_INCLUDE} -I${NUMPY_INCLUDE} -latomic"
+OECMAKE_CXX_FLAGS_RELEASE += "-I${PYTHON_INCLUDE_DIR} -I${PYBIND11_INCLUDE} -I${NUMPY_INCLUDE} -latomic"
 
-OECMAKE_C_FLAGS += "-I${PYTHON_INCLUDE_DIR} -I${PYBIND11_INCLUDE} -I${NUMPY_INCLUDE}"
-OECMAKE_C_FLAGS_RELEASE += "-I${PYTHON_INCLUDE_DIR} -I${PYBIND11_INCLUDE} -I${NUMPY_INCLUDE}"
-OECMAKE_CXX_FLAGS += "-I${PYTHON_INCLUDE_DIR} -I${PYBIND11_INCLUDE} -I${NUMPY_INCLUDE}"
-OECMAKE_CXX_FLAGS_RELEASE += "-I${PYTHON_INCLUDE_DIR} -I${PYBIND11_INCLUDE} -I${NUMPY_INCLUDE}"
+do_configure:prepend() {
+    export cmake=/home/naoh/.conda/envs/os/bin/cmake    # 指定本机 CMake 的绝对路径
+}
+
+do_compile:prepend() {
+    pwd
+}
 
 EXTRA_OECMAKE:append = " \
     -Donnxruntime_RUN_ONNX_TESTS=OFF \
@@ -146,7 +156,10 @@ EXTRA_OECMAKE:append:raspberrypi4-64 = " \
 do_configure[network] = "1"
 
 do_compile:append() {
-    ${STAGING_BINDIR_NATIVE}/${PYTHON_PN}-native/${PYTHON_PN} ${S}/setup.py bdist_wheel
+    cmake=/home/naoh/.conda/envs/os/bin/cmake \
+    ${S}/build.sh --cmake_generator Ninja --parallel --config Debug --build_shared_lib --rv64 --riscv_toolchain_root=/ --skip_tests --cmake_extra_defines "CMAKE_MAKE_PROGRAM=/usr/bin/ninja"
+    #${STAGING_BINDIR_NATIVE}/${PYTHON_PN}-native/${PYTHON_PN} -m pip install packaging cmake -y
+    #${STAGING_BINDIR_NATIVE}/${PYTHON_PN}-native/${PYTHON_PN} ${S}/setup.py bdist_wheel
 }
 
 do_install:append() {
