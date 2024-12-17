@@ -49,14 +49,6 @@ OECMAKE_C_FLAGS_RELEASE += "-I${PYTHON_INCLUDE_DIR} -I${PYBIND11_INCLUDE} -I${NU
 OECMAKE_CXX_FLAGS += "-I${PYTHON_INCLUDE_DIR} -I${PYBIND11_INCLUDE} -I${NUMPY_INCLUDE} -latomic"
 OECMAKE_CXX_FLAGS_RELEASE += "-I${PYTHON_INCLUDE_DIR} -I${PYBIND11_INCLUDE} -I${NUMPY_INCLUDE} -latomic"
 
-do_configure:prepend() {
-    export cmake=/home/naoh/.conda/envs/os/bin/cmake    # 指定本机 CMake 的绝对路径
-}
-
-do_compile:prepend() {
-    pwd
-}
-
 EXTRA_OECMAKE:append = " \
     -Donnxruntime_RUN_ONNX_TESTS=OFF \
     -Donnxruntime_GENERATE_TEST_REPORTS=ON \
@@ -157,19 +149,20 @@ EXTRA_OECMAKE:append:raspberrypi4-64 = " \
 do_configure[network] = "1"
 
 do_compile:append() {
-    cmake=/home/naoh/.conda/envs/os/bin/cmake \
-    ${S}/build.sh --cmake_generator Ninja --parallel --config Debug --build_shared_lib --rv64 --riscv_toolchain_root=/ --skip_tests --cmake_extra_defines "CMAKE_MAKE_PROGRAM=/usr/bin/ninja"
+    ${S}/build.sh --cmake_path /home/naoh/.conda/envs/os/bin/cmake --ctest_path "" --cmake_generator Ninja --parallel --config Release --build_shared_lib --rv64 --riscv_toolchain_root=/ --skip_tests --cmake_extra_defines "CMAKE_MAKE_PROGRAM=/usr/bin/ninja" --cmake_extra_defines "CMAKE_INSTALL_PREFIX=${S}" 
     #${STAGING_BINDIR_NATIVE}/${PYTHON_PN}-native/${PYTHON_PN} -m pip install packaging cmake -y
     #${STAGING_BINDIR_NATIVE}/${PYTHON_PN}-native/${PYTHON_PN} ${S}/setup.py bdist_wheel
 }
 
 do_install:append() {
-    install -d ${D}/${PYTHON_SITEPACKAGES_DIR}
+    /home/naoh/.conda/envs/os/bin/cmake --install ${S}/build/Linux/Release --prefix ${D}/usr
+    install -d ${D}${libdir}
+    install -d ${D}${includedir}
 
-    TAGING_INCDIR=${STAGING_INCDIR} \
-    STAGING_LIBDIR=${STAGING_LIBDIR} \
-    ${STAGING_BINDIR_NATIVE}/${PYTHON_PN}-native/${PYTHON_PN} -m pip install --disable-pip-version-check -v \
-    -t ${D}/${PYTHON_SITEPACKAGES_DIR} --no-cache-dir --no-deps dist/onnxruntime-${DPV}-*.whl
+    # TAGING_INCDIR=${STAGING_INCDIR} \
+    # STAGING_LIBDIR=${STAGING_LIBDIR} \
+    # ${STAGING_BINDIR_NATIVE}/${PYTHON_PN}-native/${PYTHON_PN} -m pip install --disable-pip-version-check -v \
+    # -t ${D}/${PYTHON_SITEPACKAGES_DIR} --no-cache-dir --no-deps dist/onnxruntime-${DPV}-*.whl
 }
 
 FILES:${PN}-dev = " \
@@ -180,9 +173,14 @@ FILES:${PN}-dev = " \
     ${libdir}/cmake/onnxruntime/*.cmake \
 "
 
-FILES:${PN} += "${libdir}/libonnxruntime.so"
-FILES:${PN} += "${libdir}/libonnxruntime.so.*"
-FILES:${PN} += "${libdir}/libonnxruntime_providers_shared.so"
-FILES:${PN} += "${libdir}/python3.*/site-packages/*"
+FILES:${PN} += " \
+    ${includedir}/onnxruntime/*.h \
+    ${includedir}/onnxruntime/core/providers/*.h \
+    ${includedir}/onnxruntime/core/session/* \
+    ${libdir}/libonnxruntime.so \
+    ${libdir}/libonnxruntime_providers_shared.so \
+    ${libdir}/pkgconfig/libonnxruntime.pc \
+    ${libdir}/cmake/onnxruntime/*.cmake \
+"
 FILES:${PN} += "${bindir}/onnx_test_runner"
 INSANE_SKIP:${PN} += "buildpaths"
