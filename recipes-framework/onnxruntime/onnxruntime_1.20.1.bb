@@ -15,7 +15,8 @@ SRC_URI = " \
     file://0001-modify_platform_cpp.patch \
     file://0001-remove-onnxruntime_test.patch \
     file://0001-arm64-force-mcpu-to-be-valid.patch \
-    file://polyos.patch \
+    file://0004-adapt-for-polyos.patch \
+    file://0005-fix-riscv-sgemm-bug.patch \
 "
 
 S = "${WORKDIR}/git"

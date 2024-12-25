@@ -1,3 +1,16 @@
+From d02fbeff0d39ca1320334fa7f96efb6eb5febfb8 Mon Sep 17 00:00:00 2001
+From: NaOHCC <NaOH@live.cn>
+Date: Wed, 25 Dec 2024 10:57:44 +0800
+Subject: [PATCH 1/2] adapt for polyos
+
+---
+ .gitmodules                      |  6 +--
+ cmake/deps.txt                   | 80 ++++++++++++++++----------------
+ cmake/libonnxruntime.pc.cmake.in | 11 ++---
+ cmake/onnxruntime_session.cmake  |  4 +-
+ cmake/riscv64.toolchain.cmake    | 25 +++++-----
+ 5 files changed, 62 insertions(+), 64 deletions(-)
+
 diff --git a/.gitmodules b/.gitmodules
 index 29ca8821f8..a2557ea34d 100644
 --- a/.gitmodules
@@ -16,61 +29,6 @@ index 29ca8821f8..a2557ea34d 100644
 -	url = https://github.com/emscripten-core/emsdk.git
 +	url = https://gh.llkk.cc/https://github.com/emscripten-core/emsdk.git
  	branch = 3.1.59
-diff --git a/build.sh b/build.sh
-index bf799ac8b7..35aa9e417f 100755
---- a/build.sh
-+++ b/build.sh
-@@ -19,3 +19,4 @@ elif [[ "$*" == *"--android"* ]]; then
- fi
- 
- python3 $DIR/tools/ci_build/build.py --build_dir $DIR/build/$DIR_OS "$@"
-+# ./build.sh --cmake_generator Ninja --parallel --config Debug --rv64 --build_shared_lib --riscv_toolchain_root=/opt/riscv64-linux --riscv_qemu_path=/opt/riscv64-linux/bin/qemu-riscv64 --skip_tests
-diff --git a/cmake/CMakeLists.txt b/cmake/CMakeLists.txt
-index d90a2a3550..ce46c7f009 100644
---- a/cmake/CMakeLists.txt
-+++ b/cmake/CMakeLists.txt
-@@ -532,23 +532,24 @@ endif()
- # We need to link with libatomic on systems that do not have built-in atomics, or
- # don't have built-in support for 8 byte atomics
- # Derived from https://github.com/protocolbuffers/protobuf/blob/master/cmake/CMakeLists.txt
--set(onnxruntime_LINK_LIBATOMIC false)
--# We don't need to link libatomic on iOS
--if (NOT MSVC AND NOT (CMAKE_SYSTEM_NAME STREQUAL "iOS"))
--  include(CheckCXXSourceCompiles)
--  set(OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
--  set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} -std=c++11)
--  check_cxx_source_compiles("
--    #include <atomic>
--    int main() {
--      return std::atomic<int64_t>{};
--    }
--  " onnxruntime_HAVE_BUILTIN_ATOMICS)
--  if (NOT onnxruntime_HAVE_BUILTIN_ATOMICS)
--    set(onnxruntime_LINK_LIBATOMIC true)
--  endif()
--  set(CMAKE_REQUIRED_FLAGS ${OLD_CMAKE_REQUIRED_FLAGS})
--endif()
-+# set(onnxruntime_LINK_LIBATOMIC false)
-+# # We don't need to link libatomic on iOS
-+# if (NOT MSVC AND NOT (CMAKE_SYSTEM_NAME STREQUAL "iOS"))
-+#   include(CheckCXXSourceCompiles)
-+#   set(OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-+#   set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} -std=c++11)
-+#   check_cxx_source_compiles("
-+#     #include <atomic>
-+#     int main() {
-+#       return std::atomic<int64_t>{};
-+#     }
-+#   " onnxruntime_HAVE_BUILTIN_ATOMICS)
-+#   if (NOT onnxruntime_HAVE_BUILTIN_ATOMICS)
-+#     set(onnxruntime_LINK_LIBATOMIC true)
-+#   endif()
-+#   set(CMAKE_REQUIRED_FLAGS ${OLD_CMAKE_REQUIRED_FLAGS})
-+# endif()
-+set(onnxruntime_LINK_LIBATOMIC true)
- 
- set(REPO_ROOT ${PROJECT_SOURCE_DIR}/..)
- set(ONNXRUNTIME_ROOT ${PROJECT_SOURCE_DIR}/../onnxruntime)
 diff --git a/cmake/deps.txt b/cmake/deps.txt
 index 9219f16be0..f628c397cd 100644
 --- a/cmake/deps.txt
@@ -249,3 +207,6 @@ index 0fda239f9a..08adb734be 100644
 +# set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 +# set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 +# set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+-- 
+2.34.1
+
